@@ -1,0 +1,44 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Verify HTML Files
+        run: |
+          test -f index.html && [ -s index.html ]
+          test -f recommender.html && [ -s recommender.html ]
+          test -f crops.html && [ -s crops.html ]
+          test -f about.html && [ -s about.html ]
+          test -f pipeline.html && [ -s pipeline.html ]
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Website Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+  deploy:
+    needs: test-and-build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
